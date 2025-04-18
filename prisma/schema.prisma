@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+ }
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id          Int                   @id @default(autoincrement())
+  name        String
+  email       String    @unique
+  phoneNumber String
+  username    String    @unique
+  password    String
+  role        AdminRole
+  isActive    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+}
+
+model Brand {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  logoUrl         String
+  vehicleImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  Car             Car[]
+}
+
+model Car {
+  id                Int                   @id @default(autoincrement())
+  name              String
+  price             Float
+  description       String
+  shortDescription  String
+  brandId           Int
+  model             String
+  mileage           Int
+  status            CarStatus
+  isFavorite        Boolean       @default(false)
+  badge             String?
+  enginePower       Int
+  seats             Int
+  color             String
+  yearOfManufacture Int
+  currentLocation   String
+  availability      Boolean       @default(true)
+  drive             String
+  engineSize        Float
+  fuelType          String
+  horsePower        Int
+  transmission      String
+  torque            String?
+  aspiration        String?
+  acceleration      Float?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime
+  Brand             Brand         @relation(fields: [brandId], references: [id])
+  CarImage          CarImage[]
+  SellListing       SellListing[]
+  Feature           Feature[]
+}
+
+model CarImage {
+  id        Int                   @id @default(autoincrement())
+  url       String
+  carId     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+model Feature {
+  id        Int                   @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Car       Car[]
+}
+
+model Member {
+  id          Int                   @id @default(autoincrement())
+  name        String
+  email       String        @unique
+  phoneNumber String
+  password    String
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  SellListing SellListing[]
+}
+
+model PaymentOption {
+  id          Int                   @id @default(autoincrement())
+  name        String
+  logoUrl     String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+}
+
+model SellListing {
+  id           Int                   @id @default(autoincrement())
+  name         String
+  email        String
+  phoneNumber  String
+  carName      String
+  description  String
+  color        String
+  location     String
+  mileage      Int
+  brandName    String
+  carType      String
+  enginePower  Int
+  engineType   String
+  condition    Condition
+  sellingPrice Float
+  carId        Int?
+  memberId     Int?
+  status       ListingStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime
+  Car          Car?          @relation(fields: [carId], references: [id])
+  Member       Member?       @relation(fields: [memberId], references: [id])
+}
+
+model Service {
+  id          Int                   @id @default(autoincrement())
+  name        String
+  description String
+  logoUrl     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+}
+
+model Ticket {
+  id           Int                   @id @default(autoincrement())
+  ticketNumber String       @unique
+  name         String
+  email        String
+  phoneNumber  String
+  message      String
+  status       TicketStatus @default(OPEN)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  MANAGER
+  ADMIN
+  CTO
+  FINANCE_ADMIN
+}
+
+enum CarStatus {
+  NEW
+  USED
+}
+
+enum Condition {
+  GOOD
+  AVERAGE
+  POOR
+  BAD
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SOLD
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
