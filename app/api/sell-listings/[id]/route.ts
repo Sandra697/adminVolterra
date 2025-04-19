@@ -18,6 +18,13 @@ export async function GET(
 
     const listing = await prisma.sellListing.findUnique({
       where: { id },
+      include: {
+        // Include related images if you have a separate table for multiple images
+        // SellListingImage: true,
+        // Or any other relations you might need
+        Car: true,
+        Member: true,
+      }
     });
 
     if (!listing) {
@@ -75,8 +82,7 @@ export async function PATCH(
       where: { id },
       data: { 
         status,
-        // You might want to add a rejectionReason field to your schema
-        // or store this information elsewhere
+        ...(status === "REJECTED" && { rejectionReason }),
       },
     });
 

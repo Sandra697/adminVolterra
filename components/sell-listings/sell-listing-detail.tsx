@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -17,10 +18,29 @@ import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 
 // Define types based on our Prisma schema
 type ListingStatus = "PENDING" | "APPROVED" | "REJECTED" | "SOLD"
 type Condition = "GOOD" | "AVERAGE" | "POOR" | "BAD"
+
+// Add interface for image data if you have a separate table
+interface SellListingImage {
+  id: number
+  url: string
+  sellListingId: number
+  updatedAt: string;
+}
+
+interface Car {
+  id: number
+  // Include other Car model properties as needed
+}
+
+interface Member {
+  id: number
+  // Include other Member model properties as needed
+}
 
 interface SellListing {
   id: number
@@ -40,18 +60,26 @@ interface SellListing {
   sellingPrice: number
   status: ListingStatus
   createdAt: string
-  updatedAt: string
+  imageUrl?: string | null // Single image URL
+  rejectionReason?: string
+  carId?: number | null
+  memberId?: number | null
+  Car?: Car | null
+  Member?: Member | null
+  SellListingImages?: SellListingImage[] // For multiple images
+  updatedAt?: string;
 }
 
 type SellListingDetailProps = {
-  listingId: string
+  listing?: SellListing // Make it optional if fetching in component
+  listingId?: string // Make it optional if passing listing directly
 }
 
-export function SellListingDetail({ listingId }: SellListingDetailProps) {
+export function SellListingDetail({ listing: initialListing, listingId }: SellListingDetailProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [listing, setListing] = useState<SellListing | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [listing, setListing] = useState<SellListing | null>(initialListing || null)
+  const [isLoading, setIsLoading] = useState(!initialListing && !!listingId)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false)
@@ -63,9 +91,11 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
     }
   }, [searchParams])
 
-  // Fetch listing data
+  // Fetch listing data if not provided directly
   useEffect(() => {
     const fetchListing = async () => {
+      if (!listingId) return
+      
       setIsLoading(true)
       try {
         const response = await fetch(`/api/sell-listings/${listingId}`)
@@ -88,10 +118,10 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
       }
     }
 
-    if (listingId) {
+    if (listingId && !initialListing) {
       fetchListing()
     }
-  }, [listingId])
+  }, [listingId, initialListing])
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -115,7 +145,7 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`/api/sell-listings/${listingId}`, {
+      const response = await fetch(`/api/sell-listings/${listing?.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -174,8 +204,17 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
     )
   }
 
+  // Gather all images - single imageUrl and multiple SellListingImages if available
+  const images: string[] = []
+  if (listing.imageUrl) {
+    images.push(listing.imageUrl)
+  }
+  if (listing.SellListingImages && listing.SellListingImages.length > 0) {
+    images.push(...listing.SellListingImages.map(img => img.url))
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-medium text-[0.75rem] text-gray-700">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -191,8 +230,48 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Car Images Section */}
+          {images.length > 0 && (
+            <div>
+              <h3 className="text-[0.8rem] font-medium mb-3">Images</h3>
+              {images.length === 1 ? (
+                <div className="relative h-64 w-full rounded-md overflow-hidden">
+                  <Image 
+                    src={images[0]} 
+                    alt={`${listing.carName}`} 
+                    fill 
+                    style={{ objectFit: "contain" }}
+                    className="rounded-md"
+                  />
+                </div>
+              ) : (
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {images.map((image, index) => (
+                      <CarouselItem key={index} className="basis-full sm:basis-2/3 md:basis-1/2">
+                        <div className="p-1">
+                          <div className="relative h-64 w-full rounded-md overflow-hidden">
+                            <Image 
+                              src={image} 
+                              alt={`${listing.carName} - Image ${index + 1}`} 
+                              fill 
+                              style={{ objectFit: "cover" }}
+                              className="rounded-md"
+                            />
+                          </div>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+              )}
+            </div>
+          )}
+
           <div>
-            <h3 className="text-lg font-medium">Seller Information</h3>
+            <h3 className="text-[0.8rem] font-medium">Seller Information</h3>
             <Separator className="my-2" />
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
               <div>
@@ -215,7 +294,7 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
           </div>
 
           <div>
-            <h3 className="text-lg font-medium">Car Details</h3>
+            <h3 className="text-[0.8rem] font-medium">Car Details</h3>
             <Separator className="my-2" />
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
               <div>
@@ -254,10 +333,18 @@ export function SellListingDetail({ listingId }: SellListingDetailProps) {
           </div>
 
           <div>
-            <h3 className="text-lg font-medium">Description</h3>
+            <h3 className="text-[0.8rem] font-medium">Owner Note:</h3>
             <Separator className="my-2" />
-            <p className="text-[0.75rem] text-gray-700 font-medium  ">{listing.description}</p>
+            <p className="text-[0.75rem] text-gray-700 whitespace-pre-wrap">{listing.description}</p>
           </div>
+
+          {listing.status === "REJECTED" && listing.rejectionReason && (
+            <div>
+              <h3 className="text-[0.8rem] font-medium text-destructive">Rejection Reason</h3>
+              <Separator className="my-2" />
+              <p className="text-[0.75rem] text-gray-700 whitespace-pre-wrap">{listing.rejectionReason}</p>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-end gap-4">
           <Button variant="outline" onClick={() => router.push("/dashboard/sell-listings")}>
