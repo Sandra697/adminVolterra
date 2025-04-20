@@ -16,20 +16,21 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2 } from "lucide-react"
+import { Loader2, ImageOff, RefreshCw } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import type React from "react"
 
 // Define types based on our Prisma schema
 type ListingStatus = "PENDING" | "APPROVED" | "REJECTED" | "SOLD"
 type Condition = "GOOD" | "AVERAGE" | "POOR" | "BAD"
 
-// Add interface for image data if you have a separate table
 interface SellListingImage {
   id: number
   url: string
   sellListingId: number
-  updatedAt: string;
+  createdAt: string
+  updatedAt: string
 }
 
 interface Car {
@@ -61,13 +62,13 @@ interface SellListing {
   status: ListingStatus
   createdAt: string
   imageUrl?: string | null // Single image URL
-  rejectionReason?: string
+  rejectionReason?: string | null // Updated to match Prisma's nullable field
   carId?: number | null
   memberId?: number | null
   Car?: Car | null
   Member?: Member | null
   SellListingImages?: SellListingImage[] // For multiple images
-  updatedAt?: string;
+  updatedAt?: string
 }
 
 type SellListingDetailProps = {
@@ -83,6 +84,11 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [allImages, setAllImages] = useState<string[]>([])
+  const [debugInfo, setDebugInfo] = useState<string>("")
+  const [debugData, setDebugData] = useState<any>(null)
+  const [isLoadingDebug, setIsLoadingDebug] = useState(false)
 
   // Check if we should open rejection dialog on mount
   useEffect(() => {
@@ -95,16 +101,17 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
   useEffect(() => {
     const fetchListing = async () => {
       if (!listingId) return
-      
+
       setIsLoading(true)
       try {
         const response = await fetch(`/api/sell-listings/${listingId}`)
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch listing")
         }
 
         const data = await response.json()
+        console.log("Fetched listing data:", data)
         setListing(data)
       } catch (error) {
         console.error("Error fetching listing:", error)
@@ -122,6 +129,77 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
       fetchListing()
     }
   }, [listingId, initialListing])
+
+  // Automatically fetch additional images when component mounts
+  useEffect(() => {
+    if (listing && (!listing.SellListingImages || listing.SellListingImages.length === 0)) {
+      fetchAdditionalImages()
+    }
+  }, [listing])
+
+  // Process images whenever listing changes
+  useEffect(() => {
+    if (!listing) return
+
+    const images: string[] = []
+    let debug = ""
+
+    // Add the main image if it exists
+    if (listing.imageUrl) {
+      images.push(listing.imageUrl)
+      debug += `Main image: ${listing.imageUrl}\n`
+    } else {
+      debug += "No main image found\n"
+    }
+
+    // Add additional images if they exist
+    if (listing.SellListingImages && listing.SellListingImages.length > 0) {
+      debug += `Found ${listing.SellListingImages.length} additional images:\n`
+
+      listing.SellListingImages.forEach((img, index) => {
+        debug += `Image ${index + 1}: ${img.url}\n`
+
+        // Avoid duplicates (in case the main image is also in SellListingImages)
+        if (img.url !== listing.imageUrl) {
+          images.push(img.url)
+        } else {
+          debug += `  (Skipped as duplicate of main image)\n`
+        }
+      })
+    } else {
+      debug += "No additional images found\n"
+    }
+
+    debug += `Total unique images: ${images.length}`
+    setDebugInfo(debug)
+    setAllImages(images)
+    console.log("Processed images:", images)
+  }, [listing])
+
+  const fetchAdditionalImages = async () => {
+    if (!listing) return
+
+    setIsLoadingDebug(true)
+    try {
+      const response = await fetch(`/api/sell-listings/${listing.id}/images`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch additional images")
+      }
+      const data = await response.json()
+
+      if (data.images && data.images.length > 0) {
+        const updatedListing = { ...listing, SellListingImages: data.images }
+        setListing(updatedListing)
+        console.log("Automatically loaded additional images:", data.images)
+      }
+    } catch (error) {
+      console.error("Error fetching additional images:", error)
+    } finally {
+      setIsLoadingDebug(false)
+    }
+  }
+
+
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -150,7 +228,7 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: newStatus,
           ...(newStatus === "REJECTED" && { rejectionReason }),
         }),
@@ -170,7 +248,7 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
     } catch (error) {
       console.error("Error updating listing:", error)
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Failed to update listing. Please try again.",
         variant: "destructive",
       })
@@ -182,6 +260,20 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
   // Format date to be more readable
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
+  }
+
+  // Handle image loading errors
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = "/placeholder.svg?height=400&width=600" // Fallback image
+    console.error("Failed to load image:", e.currentTarget.src)
+  }
+
+  // Handle carousel selection - fixed to match the expected event handler type
+  const handleCarouselSelect = (event: React.SyntheticEvent<HTMLDivElement, Event>) => {
+    // Extract the index from the event target if possible
+    const target = event.target as HTMLElement
+    const index = Number.parseInt(target.getAttribute("data-index") || "0", 10)
+    setSelectedImageIndex(index)
   }
 
   if (isLoading) {
@@ -197,20 +289,9 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
       <div className="py-16 text-center">
         <h2 className="text-xl font-semibold mb-2">Listing Not Found</h2>
         <p className="text-muted-foreground mb-6">The requested listing could not be found.</p>
-        <Button onClick={() => router.push("/dashboard/sell-listings")}>
-          Back to Listings
-        </Button>
+        <Button onClick={() => router.push("/dashboard/sell-listings")}>Back to Listings</Button>
       </div>
     )
-  }
-
-  // Gather all images - single imageUrl and multiple SellListingImages if available
-  const images: string[] = []
-  if (listing.imageUrl) {
-    images.push(listing.imageUrl)
-  }
-  if (listing.SellListingImages && listing.SellListingImages.length > 0) {
-    images.push(...listing.SellListingImages.map(img => img.url))
   }
 
   return (
@@ -230,43 +311,76 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+        
+
           {/* Car Images Section */}
-          {images.length > 0 && (
-            <div>
-              <h3 className="text-[0.8rem] font-medium mb-3">Images</h3>
-              {images.length === 1 ? (
-                <div className="relative h-64 w-full rounded-md overflow-hidden">
-                  <Image 
-                    src={images[0]} 
-                    alt={`${listing.carName}`} 
-                    fill 
+          {allImages.length > 0 ? (
+            <div className="sm:w-1/2">
+              <h3 className="text-[0.8rem] font-medium mb-3">Images ({allImages.length})</h3>
+              {allImages.length === 1 ? (
+                <div className="relative h-64 w-xl rounded-md overflow-hidden">
+                  <Image
+                    src={allImages[0] || "/placeholder.svg"}
+                    alt={`${listing.carName}`}
+                    fill
                     style={{ objectFit: "contain" }}
                     className="rounded-md"
+                    onError={handleImageError}
                   />
                 </div>
               ) : (
-                <Carousel className="w-full">
+                <Carousel className="sm:w-1/2" defaultValue={selectedImageIndex}>
                   <CarouselContent>
-                    {images.map((image, index) => (
-                      <CarouselItem key={index} className="basis-full sm:basis-2/3 md:basis-1/2">
-                        <div className="p-1">
+                    {allImages.map((image, index) => (
+                      <CarouselItem key={index} className="basis-full" data-index={index}>
+                        <div className="p-1 w-xl">
                           <div className="relative h-64 w-full rounded-md overflow-hidden">
-                            <Image 
-                              src={image} 
-                              alt={`${listing.carName} - Image ${index + 1}`} 
-                              fill 
-                              style={{ objectFit: "cover" }}
+                            <Image
+                              src={image || "/placeholder.svg"}
+                              alt={`${listing.carName} - Image ${index + 1}`}
+                              fill
+                              style={{ objectFit: "contain" }}
                               className="rounded-md"
+                              onError={handleImageError}
                             />
                           </div>
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
+                  <CarouselPrevious className="left-2" />
+                  <CarouselNext className="right-2" />
                 </Carousel>
               )}
+
+              {/* Image thumbnails for quick navigation */}
+              {allImages.length > 1 && (
+                <div className="flex mt-4 gap-2 overflow-x-auto pb-2">
+                  {allImages.map((image, index) => (
+                    <div
+                      key={index}
+                      className={`relative h-16 w-16 rounded-md overflow-hidden cursor-pointer border-2 ${
+                        selectedImageIndex === index ? "border-primary" : "border-transparent"
+                      }`}
+                      onClick={() => setSelectedImageIndex(index)}
+                    >
+                      <Image
+                        src={image || "/placeholder.svg"}
+                        alt={`Thumbnail ${index + 1}`}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="rounded-md"
+                        onError={handleImageError}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-muted rounded-md p-8 text-center">
+              <ImageOff className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground">No images available for this listing</p>
             </div>
           )}
 
@@ -327,7 +441,7 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
               </div>
               <div>
                 <dt className="text-[0.75rem] font-medium text-muted-foreground">Asking Price</dt>
-                <dd className="font-semibold">${listing.sellingPrice.toLocaleString()}</dd>
+                <dd className="font-semibold">Kes: {listing.sellingPrice.toLocaleString()}</dd>
               </div>
             </dl>
           </div>

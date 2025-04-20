@@ -1,7 +1,6 @@
-
 generator client {
   provider = "prisma-client-js"
- }
+}
 
 datasource db {
   provider = "postgresql"
@@ -103,31 +102,47 @@ model PaymentOption {
   updatedAt   DateTime
 }
 
+
+
 model SellListing {
-  id           Int                   @id @default(autoincrement())
-  name         String
-  email        String
-  phoneNumber  String
-  carName      String
-  description  String
-  color        String
-  location     String
-  mileage      Int
-  brandName    String
-  carType      String
-  enginePower  Int
-  engineType   String
-  condition    Condition
-  sellingPrice Float
-  imageUrl     String?              // Added this field for the car image
-  carId        Int?
-  memberId     Int?
-  status       ListingStatus @default(PENDING)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime
-  Car          Car?          @relation(fields: [carId], references: [id])
-  Member       Member?       @relation(fields: [memberId], references: [id])
+  id               Int                @id @default(autoincrement())
+  name             String
+  email            String
+  phoneNumber      String
+  carName          String
+  description      String
+  color            String
+  location         String
+  mileage          Int
+  brandName        String
+  carType          String
+  enginePower      Int
+  engineType       String
+  condition        Condition
+  sellingPrice     Float
+  imageUrl         String?            // Keep for backward compatibility
+  carId            Int?
+  memberId         Int?
+  status           ListingStatus      @default(PENDING)
+  rejectionReason  String?            // Added for storing rejection reasons
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  Car              Car?               @relation(fields: [carId], references: [id])
+  Member           Member?            @relation(fields: [memberId], references: [id])
+  SellListingImages SellListingImage[] // New relation for multiple images
 }
+
+// New model for SellListing images
+model SellListingImage {
+  id            Int          @id @default(autoincrement())
+  url           String
+  sellListingId Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  SellListing   SellListing  @relation(fields: [sellListingId], references: [id], onDelete: Cascade)
+}
+
+
 
 model Service {
   id          Int                   @id @default(autoincrement())
@@ -183,4 +198,3 @@ enum TicketStatus {
   RESOLVED
   CLOSED
 }
-
