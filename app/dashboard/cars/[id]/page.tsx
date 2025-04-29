@@ -65,7 +65,7 @@ export default async function CarDetailsPage({ params }: { params: { id: string 
               <div className="space-y-4">
                 <div>
                   <h3 className="text-[0.75rem]  font-medium text-gray-500">Price</h3>
-                  <p className="text-[0.85rem]  font-bold">${car.price.toLocaleString()}</p>
+                  <p className="text-[0.85rem]  font-bold">KES: {car.price.toLocaleString()}</p>
                 </div>
 
                 <div>
@@ -108,9 +108,9 @@ export default async function CarDetailsPage({ params }: { params: { id: string 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h2 className="text-[0.85rem]  font-bold mb-4">Description</h2>
-          <p className="text-gray-700 whitespace-pre-line">{car.description}</p>
+          <p className="text-gray-700 text-xs whitespace-pre-line">{car.description}</p>
 
-          <h3 className="text-[0.8rem]  font-bold mt-6 mb-4">Features</h3>
+          <h3 className="text-[0.75rem]  font-bold mt-6 mb-4">Features</h3>
           {car.Feature && car.Feature.length > 0 ? (
             <ul className="grid grid-cols-2 gap-2">
               {car.Feature.map((feature) => (

@@ -1,6 +1,7 @@
+
 generator client {
   provider = "prisma-client-js"
-}
+ }
 
 datasource db {
   provider = "postgresql"
@@ -62,6 +63,8 @@ model Car {
   CarImage          CarImage[]
   SellListing       SellListing[]
   Feature           Feature[]
+
+  SellListingOriginal SellListingOriginal[]
 }
 
 model CarImage {
@@ -91,6 +94,8 @@ model Member {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime
   SellListing SellListing[]
+
+  SellListingOriginal SellListingOriginal[]
 }
 
 model PaymentOption {
@@ -103,33 +108,185 @@ model PaymentOption {
 }
 
 
-
 model SellListing {
-  id               Int                @id @default(autoincrement())
-  name             String
-  email            String
-  phoneNumber      String
-  carName          String
-  description      String
-  color            String
-  location         String
-  mileage          Int
-  brandName        String
-  carType          String
-  enginePower      Int
-  engineType       String
-  condition        Condition
-  sellingPrice     Float
-  imageUrl         String?            // Keep for backward compatibility
-  carId            Int?
-  memberId         Int?
-  status           ListingStatus      @default(PENDING)
-  rejectionReason  String?            // Added for storing rejection reasons
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  Car              Car?               @relation(fields: [carId], references: [id])
-  Member           Member?            @relation(fields: [memberId], references: [id])
-  SellListingImages SellListingImage[] // New relation for multiple images
+  id                  Int                @id @default(autoincrement())
+  // Owner/Seller Information
+  name                String
+  email               String
+  phoneNumber         String
+  
+  // Basic Car Information
+  carName             String
+  description         String
+  color               String
+  location            String
+  mileage             Int
+  brandName           String
+  carType             String
+  yearOfManufacture   Int
+  
+  // Engine & Performance Details
+  enginePower         Int
+  engineType          String?
+  engineSize          Float?
+  fuelType            String?
+  transmission        String?           // Manual, Automatic, CVT, etc.
+  driveType           String?           // FWD, RWD, AWD, 4WD
+  horsePower          Int?
+  torque              String?
+  acceleration        Float?           // 0-60 mph time
+  topSpeed            Int?             // Maximum speed in mph/kmh
+  
+  // Additional Specifications
+  vinNumber           String?          // Vehicle Identification Number
+  registrationNumber  String?          // License plate or registration number
+  lastServiceDate     DateTime?        // Date of last service
+  numberOfOwners      Int?             // Number of previous owners
+  seatingCapacity     Int?             // Number of seats
+  doors               Int?             // Number of doors
+  weight              Float?           // Vehicle weight in kg
+  fuelTankCapacity    Float?           // Capacity in liters
+  
+  // Features & Equipment
+  hasAC               Boolean?         // Air conditioning
+  hasPowerSteering    Boolean?         // Power steering
+  hasNavigation       Boolean?         // Navigation system
+  hasSunroof          Boolean?         // Sunroof/Moonroof
+  hasLeatherSeats     Boolean?         // Leather seats
+  hasBackupCamera     Boolean?         // Backup camera
+  hasParkingSensors   Boolean?         // Parking sensors
+  hasBluetoothAudio   Boolean?         // Bluetooth audio
+  hasCruiseControl    Boolean?         // Cruise control
+  hasKeylessEntry     Boolean?         // Keyless entry
+  
+  // Safety Features
+  hasABS              Boolean?         // Anti-lock Braking System
+  hasAirbags          Boolean?         // Airbags
+  hasESP              Boolean?         // Electronic Stability Program
+  hasTractionControl  Boolean?         // Traction control
+  
+  // Condition and Pricing
+  condition           Condition
+  sellingPrice        Float
+  marketValue         Float?           // Estimated market value
+  isNegotiable        Boolean?         // Price negotiability
+  reasonForSelling    String?          // Why the owner is selling
+  
+  // Images and Documentation
+  imageUrl            String?          // Keep for backward compatibility
+  documentUrls        String[]         // Array of document URLs (service history, etc.)
+  
+  // Listing Status and Relations
+  carId               Int?
+  memberId            Int?
+  status              ListingStatus    @default(PENDING)
+  rejectionReason     String?          // Added for storing rejection reasons
+  
+  // Availability for viewing
+  availableForViewing Boolean?         @default(true)
+  bestTimeToContact   String?          // Preferred contact hours
+  
+  // Timestamps
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  
+  // Relations
+  Car                 Car?             @relation(fields: [carId], references: [id])
+  Member              Member?          @relation(fields: [memberId], references: [id])
+  SellListingImages   SellListingImage[] // New relation for multiple images
+  
+  // Extra information field for any additional details
+  additionalInfo      Json?            // For storing any other custom fields
+}
+model SellListingOriginal {
+  id                  Int                @id @default(autoincrement())
+  // Owner/Seller Information
+  name                String
+  email               String
+  phoneNumber         String
+  
+  // Basic Car Information
+  carName             String
+  description         String
+  color               String
+  location            String
+  mileage             Int
+  brandName           String
+  carType             String
+  yearOfManufacture   Int
+  
+  // Engine & Performance Details
+  enginePower         Int
+  engineType          String?
+  engineSize          Float?
+  fuelType            String?
+  transmission        String?           // Manual, Automatic, CVT, etc.
+  driveType           String?           // FWD, RWD, AWD, 4WD
+  horsePower          Int?
+  torque              String?
+  acceleration        Float?           // 0-60 mph time
+  topSpeed            Int?             // Maximum speed in mph/kmh
+  
+  // Additional Specifications
+  vinNumber           String?          // Vehicle Identification Number
+  registrationNumber  String?          // License plate or registration number
+  lastServiceDate     DateTime?        // Date of last service
+  numberOfOwners      Int?             // Number of previous owners
+  seatingCapacity     Int?             // Number of seats
+  doors               Int?             // Number of doors
+  weight              Float?           // Vehicle weight in kg
+  fuelTankCapacity    Float?           // Capacity in liters
+  
+  // Features & Equipment
+  hasAC               Boolean?         // Air conditioning
+  hasPowerSteering    Boolean?         // Power steering
+  hasNavigation       Boolean?         // Navigation system
+  hasSunroof          Boolean?         // Sunroof/Moonroof
+  hasLeatherSeats     Boolean?         // Leather seats
+  hasBackupCamera     Boolean?         // Backup camera
+  hasParkingSensors   Boolean?         // Parking sensors
+  hasBluetoothAudio   Boolean?         // Bluetooth audio
+  hasCruiseControl    Boolean?         // Cruise control
+  hasKeylessEntry     Boolean?         // Keyless entry
+  
+  // Safety Features
+  hasABS              Boolean?         // Anti-lock Braking System
+  hasAirbags          Boolean?         // Airbags
+  hasESP              Boolean?         // Electronic Stability Program
+  hasTractionControl  Boolean?         // Traction control
+  
+  // Condition and Pricing
+  condition           Condition
+  sellingPrice        Float
+  marketValue         Float?           // Estimated market value
+  isNegotiable        Boolean?         // Price negotiability
+  reasonForSelling    String?          // Why the owner is selling
+  
+  // Images and Documentation
+  imageUrl            String?          // Keep for backward compatibility
+  documentUrls        String[]         // Array of document URLs (service history, etc.)
+  
+  // Listing Status and Relations
+  carId               Int?
+  memberId            Int?
+  status              ListingStatus    @default(PENDING)
+  rejectionReason     String?          // Added for storing rejection reasons
+  
+  // Availability for viewing
+  availableForViewing Boolean?         @default(true)
+  bestTimeToContact   String?          // Preferred contact hours
+  
+  // Timestamps
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  
+  // Relations
+  Car                 Car?             @relation(fields: [carId], references: [id])
+  Member              Member?          @relation(fields: [memberId], references: [id])
+  SellListingImages   SellListingImage[] // New relation for multiple images
+  
+  // Extra information field for any additional details
+  additionalInfo      Json?            // For storing any other custom fields
 }
 
 // New model for SellListing images
@@ -140,17 +297,22 @@ model SellListingImage {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   SellListing   SellListing  @relation(fields: [sellListingId], references: [id], onDelete: Cascade)
+
+  SellListingOriginal SellListingOriginal[]
 }
 
 
 
 model Service {
-  id          Int                   @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   name        String
   description String
   logoUrl     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  price       Float?          // Optional price field
+  duration    String?         // Optional duration (e.g., "2 hours", "3 days")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  bookings    ServiceBooking[]
 }
 
 model Ticket {
@@ -163,8 +325,8 @@ model Ticket {
   status       TicketStatus @default(OPEN)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime
+  responses    TicketResponse[]
 }
-
 enum AdminRole {
   SUPER_ADMIN
   MANAGER
@@ -197,4 +359,53 @@ enum TicketStatus {
   IN_PROGRESS
   RESOLVED
   CLOSED
+}
+
+
+model TicketResponse {
+  id        Int      @id @default(autoincrement())
+  message   String
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+
+
+
+
+model ServiceBooking {
+  id              Int           @id @default(autoincrement())
+  name            String
+  email           String
+  phoneNumber     String
+  serviceId       Int
+  service         Service       @relation(fields: [serviceId], references: [id])
+  carDetails      String        // Car make, model, year, etc.
+  preferredDate   DateTime
+  alternateDate   DateTime?
+  message         String?
+  status          BookingStatus @default(PENDING)
+  responses       ServiceBookingResponse[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model ServiceBookingResponse {
+  id              Int           @id @default(autoincrement())
+  message         String
+  bookingId       Int
+  booking         ServiceBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
 }

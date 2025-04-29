@@ -8,15 +8,45 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
+import { updateTicketStatus, addTicketResponse } from "@/lib/ticket-actions"
+import { toast } from "@/hooks/use-toast"
 
-type TicketDetailProps = {
-  ticket: any
+interface TicketResponse {
+  id: number
+  message: string
+  createdAt: string | Date
+}
+
+interface Ticket {
+  id: number
+  ticketNumber: string
+  name: string
+  email: string
+  phoneNumber: string
+  message: string
+  status: string
+  createdAt: string | Date
+  updatedAt: string | Date
+  responses: TicketResponse[]
+}
+
+interface TicketDetailProps {
+  ticket: Ticket
 }
 
 export function TicketDetail({ ticket }: TicketDetailProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [response, setResponse] = useState("")
+
+  const formattedCreatedAt =
+    ticket.createdAt instanceof Date
+      ? ticket.createdAt.toLocaleDateString()
+      : typeof ticket.createdAt === "string"
+        ? ticket.createdAt.includes("T")
+          ? new Date(ticket.createdAt).toLocaleDateString()
+          : ticket.createdAt
+        : ""
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -40,43 +70,73 @@ export function TicketDetail({ ticket }: TicketDetailProps) {
       .join(" ")
   }
 
+  const formatDate = (date: string | Date) => {
+    if (date instanceof Date) {
+      return date.toLocaleString()
+    }
+    if (typeof date === "string") {
+      return date.includes("T") ? new Date(date).toLocaleString() : date
+    }
+    return ""
+  }
+
   const handleStatusChange = async (newStatus: string) => {
     setIsSubmitting(true)
 
     try {
-      // Here you would make an API call to update the ticket status
-      console.log(`Updating ticket ${ticket.id} status to ${newStatus}`)
-      if (response) {
-        console.log(`Response: ${response}`)
-      }
+      // Update ticket status with response if provided
+      await updateTicketStatus(ticket.id, newStatus, response)
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      toast({
+        title: "Status updated",
+        description: `Ticket status changed to ${formatStatus(newStatus)}`,
+      })
 
       router.push("/dashboard/tickets")
       router.refresh()
     } catch (error) {
-      console.error("Error updating ticket:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update ticket status",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Mock data for the example
-  const mockTicket = {
-    id: "1",
-    ticketNumber: "TKT-1001",
-    name: "John Smith",
-    email: "john@example.com",
-    phoneNumber: "+1 (555) 123-4567",
-    message:
-      "I'm having trouble with my payment for the BMW X5 I was interested in. I tried to make a deposit but the transaction failed multiple times. Can someone from the finance department contact me? I'm still very interested in the vehicle.",
-    status: "OPEN",
-    createdAt: "2023-05-15",
-  }
+  const handleAddResponse = async () => {
+    if (!response.trim()) {
+      toast({
+        title: "Error",
+        description: "Response cannot be empty",
+        variant: "destructive",
+      })
+      return
+    }
 
-  // Use mock data if no ticket is provided
-  const displayTicket = ticket || mockTicket
+    setIsSubmitting(true)
+
+    try {
+      await addTicketResponse(ticket.id, response)
+
+      toast({
+        title: "Response added",
+        description: "Your response has been added to the ticket",
+      })
+
+      setResponse("")
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add response",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -84,41 +144,56 @@ export function TicketDetail({ ticket }: TicketDetailProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Ticket #{displayTicket.ticketNumber}</CardTitle>
-              <CardDescription>Created on {displayTicket.createdAt}</CardDescription>
+              <CardTitle>Ticket #{ticket.ticketNumber}</CardTitle>
+              <CardDescription>Created on {formattedCreatedAt}</CardDescription>
             </div>
-            <Badge variant={getStatusBadgeVariant(displayTicket.status)}>{formatStatus(displayTicket.status)}</Badge>
+            <Badge variant={getStatusBadgeVariant(ticket.status)}>{formatStatus(ticket.status)}</Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 text-gray-700 font-medium text-xs">
           <div>
-            <h3 className="text-lg font-medium">Customer Information</h3>
+            <h3 className="text-sm text-red-700  font-medium">Customer Information</h3>
             <Separator className="my-2" />
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
               <div>
-                <dt className="text-[0.75rem]  font-medium text-muted-foreground">Name</dt>
-                <dd>{displayTicket.name}</dd>
+                <dt className="text-[0.75rem] font-medium text-muted-foreground">Name</dt>
+                <dd>{ticket.name}</dd>
               </div>
               <div>
-                <dt className="text-[0.75rem]  font-medium text-muted-foreground">Email</dt>
-                <dd>{displayTicket.email}</dd>
+                <dt className="text-[0.75rem] font-medium text-muted-foreground">Email</dt>
+                <dd>{ticket.email}</dd>
               </div>
               <div>
-                <dt className="text-[0.75rem]  font-medium text-muted-foreground">Phone</dt>
-                <dd>{displayTicket.phoneNumber}</dd>
+                <dt className="text-[0.75rem] font-medium text-muted-foreground">Phone</dt>
+                <dd>{ticket.phoneNumber}</dd>
               </div>
             </dl>
           </div>
 
           <div>
-            <h3 className="text-lg font-medium">Message</h3>
+            <h3 className="text-sm text-red-700  font-medium">Message</h3>
             <Separator className="my-2" />
-            <p className="text-[0.75rem]  whitespace-pre-line">{displayTicket.message}</p>
+            <p className="text-[0.75rem] whitespace-pre-line">{ticket.message}</p>
           </div>
 
-          {(displayTicket.status === "OPEN" || displayTicket.status === "IN_PROGRESS") && (
+          {ticket.responses && ticket.responses.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium">Response</h3>
+              <h3 className="text-sm text-red-700  font-medium">Previous Responses</h3>
+              <Separator className="my-2" />
+              <div className="space-y-4">
+                {ticket.responses.map((response) => (
+                  <div key={response.id} className="rounded-md border p-4">
+                    <div className="mb-2 text-sm text-muted-foreground">{formatDate(response.createdAt)}</div>
+                    <p className="whitespace-pre-line">{response.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {ticket.status !== "CLOSED" && (
+            <div>
+              <h3 className="text-sm text-red-700  font-medium">Add Response</h3>
               <Separator className="my-2" />
               <Textarea
                 placeholder="Type your response here..."
@@ -126,6 +201,12 @@ export function TicketDetail({ ticket }: TicketDetailProps) {
                 onChange={(e) => setResponse(e.target.value)}
                 className="min-h-[120px]"
               />
+              {ticket.status !== "RESOLVED" && (
+                <Button onClick={handleAddResponse} className="mt-4" disabled={isSubmitting || !response.trim()}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Response
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -134,21 +215,21 @@ export function TicketDetail({ ticket }: TicketDetailProps) {
             Back to Tickets
           </Button>
 
-          {displayTicket.status === "OPEN" && (
+          {ticket.status === "OPEN" && (
             <Button onClick={() => handleStatusChange("IN_PROGRESS")} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Mark as In Progress
             </Button>
           )}
 
-          {(displayTicket.status === "OPEN" || displayTicket.status === "IN_PROGRESS") && (
+          {(ticket.status === "OPEN" || ticket.status === "IN_PROGRESS") && (
             <Button onClick={() => handleStatusChange("RESOLVED")} disabled={isSubmitting || !response.trim()}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Resolve Ticket
             </Button>
           )}
 
-          {displayTicket.status === "RESOLVED" && (
+          {ticket.status === "RESOLVED" && (
             <Button onClick={() => handleStatusChange("CLOSED")} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Close Ticket

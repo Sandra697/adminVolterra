@@ -14,6 +14,7 @@ import {
   Settings,
   Star,
   FolderCheck,
+  PaintRoller,
 } from "lucide-react"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -29,6 +30,7 @@ export function Sidebar({ className }: SidebarProps) {
     { href: "/dashboard/members", icon: Users, title: "Members" },
     { href: "/dashboard/sell-listings", icon: FileText, title: "Sell Listings" },
     { href: "/service", icon: FolderCheck, title: "Services" },
+    { href: "/service/bookings", icon: PaintRoller, title: "Service Bookings" },
     { href: "/dashboard/tickets", icon: MessageSquare, title: "Support Tickets" },
     { href: "/dashboard/settings", icon: Settings, title: "Settings" },
   ]

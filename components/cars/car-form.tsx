@@ -17,15 +17,22 @@ import { createCar, updateCar } from "@/lib/action"
 // Option 1: If you want to keep using the existing form components but without React Hook Form:
 // Create simplified versions that don't depend on form context
 const SimpleFormItem = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`space-y-2 ${className || ''}`} {...props}>{children}</div>
+  <div className={`space-y-2 ${className || ""}`} {...props}>
+    {children}
+  </div>
 )
 
 const SimpleFormLabel = ({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
-  <label className={`text-[0.75rem]  font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className || ''}`} {...props} />
+  <label
+    className={`text-[0.75rem]  font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className || ""}`}
+    {...props}
+  />
 )
 
 const SimpleFormControl = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={className} {...props}>{children}</div>
+  <div className={className} {...props}>
+    {children}
+  </div>
 )
 
 interface CarFormProps {
@@ -42,6 +49,8 @@ export function CarForm({ car, brands, features }: CarFormProps) {
   const [existingImages, setExistingImages] = useState(car?.CarImage || [])
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([])
   const [selectedFeatures, setSelectedFeatures] = useState<number[]>(car?.Feature?.map((f: { id: any }) => f.id) || [])
+
+  console.log("Brands data:", brands)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -127,11 +136,17 @@ export function CarForm({ car, brands, features }: CarFormProps) {
                 <SelectValue placeholder="Select brand" />
               </SelectTrigger>
               <SelectContent>
-                {brands.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id.toString()}>
-                    {brand.name}
+                {brands && brands.length > 0 ? (
+                  brands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id.toString()}>
+                      {brand.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="loading" disabled>
+                    No brands available
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </SimpleFormItem>
@@ -205,7 +220,11 @@ export function CarForm({ car, brands, features }: CarFormProps) {
 
           <SimpleFormItem>
             <SimpleFormLabel>Availability</SimpleFormLabel>
-            <Select name="availability" defaultValue={car?.availability === undefined ? "true" : car.availability ? "true" : "false"} required>
+            <Select
+              name="availability"
+              defaultValue={car?.availability === undefined ? "true" : car.availability ? "true" : "false"}
+              required
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select availability" />
               </SelectTrigger>
@@ -265,26 +284,18 @@ export function CarForm({ car, brands, features }: CarFormProps) {
               <div className="mt-4">
                 <h4 className="text-[0.75rem]  font-medium mb-2">Current Images</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {existingImages.map((image: { id: string | number; url: string }) => (
-                  <div
-                    key={image.id}
-                    className="relative aspect-square rounded-md overflow-hidden border"
-                  >
-                    <Image
-                      src={image.url || "/placeholder.svg"}
-                      alt="Car image"
-                      fill
-                      className="object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExistingImage(Number(image.id))}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                  {existingImages.map((image: { id: string | number; url: string }) => (
+                    <div key={image.id} className="relative aspect-square rounded-md overflow-hidden border">
+                      <Image src={image.url || "/placeholder.svg"} alt="Car image" fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(Number(image.id))}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

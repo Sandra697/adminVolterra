@@ -16,62 +16,52 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MoreHorizontal, Search } from "lucide-react"
+import { updateTicketStatus, deleteTicket } from "@/lib/ticket-actions"
+import { toast } from "@/hooks/use-toast"
 
-// Mock data - would be replaced with actual API call
-const tickets = [
-  {
-    id: "1",
-    ticketNumber: "TKT-1001",
-    name: "John Smith",
-    email: "john@example.com",
-    message: "I'm having trouble with my payment",
-    status: "OPEN",
-    createdAt: "2023-05-15",
-  },
-  {
-    id: "2",
-    ticketNumber: "TKT-1002",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    message: "How do I update my listing?",
-    status: "IN_PROGRESS",
-    createdAt: "2023-05-10",
-  },
-  {
-    id: "3",
-    ticketNumber: "TKT-1003",
-    name: "Michael Brown",
-    email: "michael@example.com",
-    message: "I need to cancel my account",
-    status: "RESOLVED",
-    createdAt: "2023-05-05",
-  },
-  {
-    id: "4",
-    ticketNumber: "TKT-1004",
-    name: "Emily Davis",
-    email: "emily@example.com",
-    message: "The car I purchased has an issue",
-    status: "CLOSED",
-    createdAt: "2023-05-01",
-  },
-  {
-    id: "5",
-    ticketNumber: "TKT-1005",
-    name: "David Wilson",
-    email: "david@example.com",
-    message: "I can't access my account",
-    status: "OPEN",
-    createdAt: "2023-05-20",
-  },
-]
+interface TicketResponse {
+  id: number
+  message: string
+  createdAt: string | Date
+}
 
-export function TicketsList() {
+interface Ticket {
+  id: number
+  ticketNumber: string
+  name: string
+  email: string
+  phoneNumber: string
+  message: string
+  status: string
+  createdAt: string | Date
+  updatedAt: string | Date
+  responses: TicketResponse[]
+}
+
+interface TicketsListProps {
+  tickets: Ticket[]
+}
+
+export function TicketsList({ tickets }: TicketsListProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [isUpdating, setIsUpdating] = useState<number | null>(null)
 
-  const filteredTickets = tickets.filter((ticket) => {
+  const formattedTickets = tickets.map((ticket) => ({
+    ...ticket,
+    createdAt:
+      ticket.createdAt instanceof Date
+        ? ticket.createdAt.toISOString().split("T")[0]
+        : typeof ticket.createdAt === "string"
+          ? ticket.createdAt.includes("T")
+            ? ticket.createdAt.split("T")[0]
+            : ticket.createdAt
+          : "",
+    responseCount: ticket.responses?.length || 0,
+  }))
+
+  const filteredTickets = formattedTickets.filter((ticket) => {
     const matchesSearch =
       ticket.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,6 +93,48 @@ export function TicketsList() {
       .split("_")
       .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
       .join(" ")
+  }
+
+  const handleStatusChange = async (ticketId: number, newStatus: string) => {
+    setIsUpdating(ticketId)
+    try {
+      await updateTicketStatus(ticketId, newStatus)
+      toast({
+        title: "Status updated",
+        description: `Ticket status changed to ${formatStatus(newStatus)}`,
+      })
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update ticket status",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(null)
+    }
+  }
+
+  const handleDeleteTicket = async (ticketId: number) => {
+    if (confirm("Are you sure you want to delete this ticket? This action cannot be undone.")) {
+      setIsUpdating(ticketId)
+      try {
+        await deleteTicket(ticketId)
+        toast({
+          title: "Ticket deleted",
+          description: "The ticket has been permanently deleted",
+        })
+        router.refresh()
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete ticket",
+          variant: "destructive",
+        })
+      } finally {
+        setIsUpdating(null)
+      }
+    }
   }
 
   return (
@@ -139,6 +171,7 @@ export function TicketsList() {
               <TableHead>Customer</TableHead>
               <TableHead>Message</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Responses</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -146,7 +179,7 @@ export function TicketsList() {
           <TableBody>
             {filteredTickets.length === 0 ? (
               <TableRow className="bg-slate-100">
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No tickets found. Try adjusting your search.
                 </TableCell>
               </TableRow>
@@ -157,18 +190,19 @@ export function TicketsList() {
                   <TableCell>
                     <div>
                       <div>{ticket.name}</div>
-                      <div className="text-[0.75rem]  text-muted-foreground">{ticket.email}</div>
+                      <div className="text-[0.75rem] text-muted-foreground">{ticket.email}</div>
                     </div>
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">{ticket.message}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(ticket.status)}>{formatStatus(ticket.status)}</Badge>
                   </TableCell>
+                  <TableCell>{ticket.responseCount}</TableCell>
                   <TableCell>{ticket.createdAt}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0" disabled={isUpdating === ticket.id}>
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -179,46 +213,7 @@ export function TicketsList() {
                         <DropdownMenuItem onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}>
                           View Details
                         </DropdownMenuItem>
-                        {ticket.status === "OPEN" && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              // Mark as in progress
-                              console.log(`Mark ticket ${ticket.id} as in progress`)
-                            }}
-                          >
-                            Mark as In Progress
-                          </DropdownMenuItem>
-                        )}
-                        {(ticket.status === "OPEN" || ticket.status === "IN_PROGRESS") && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              // Mark as resolved
-                              console.log(`Mark ticket ${ticket.id} as resolved`)
-                            }}
-                          >
-                            Mark as Resolved
-                          </DropdownMenuItem>
-                        )}
-                        {ticket.status === "RESOLVED" && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              // Close ticket
-                              console.log(`Close ticket ${ticket.id}`)
-                            }}
-                          >
-                            Close Ticket
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => {
-                            // Delete ticket
-                            console.log(`Delete ticket ${ticket.id}`)
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
+                    
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
