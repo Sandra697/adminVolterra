@@ -39,7 +39,7 @@ export default function ActivityDashboardPage() {
   }, [])
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="sm:container sm:mx-auto px-2 py-6 ">
       <div className="container mx-auto">
       <h1 className="text-lg font-bold mb-6">Business Dashboard</h1>
       <BusinessPerformanceDashboard />
