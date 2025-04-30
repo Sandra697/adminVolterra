@@ -1,6 +1,7 @@
 import { Suspense } from 'react'; // Import Suspense
 import { BookingsList } from "@/components/bookinglist";
 import { getAllServiceBookings } from "@/lib/service-actions";
+import Layout from "@/components/Layout"
 
 // Define a loading component (or import one) to show as a fallback
 function BookingsLoadingFallback() {
@@ -19,13 +20,10 @@ async function BookingData() {
 
 export default function BookingsPage() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-[0.85rem] font-bold tracking-tight">Service Bookings</h1>
-    
+    <Layout>
       <Suspense fallback={<BookingsLoadingFallback />}>
-      
         <BookingData />
       </Suspense>
-    </div>
+    </Layout>
   );
 }

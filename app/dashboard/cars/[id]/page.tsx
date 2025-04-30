@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { getCarById } from "@/lib/action"
+import Layout from "@/components/Layout"
 
 export default async function CarDetailsPage({ params }: { params: { id: string } }) {
   const id = Number.parseInt(params.id)
@@ -16,7 +17,8 @@ export default async function CarDetailsPage({ params }: { params: { id: string 
   }
 
   return (
-    <div className="container mx-auto py-10">
+ <Layout>
+     <div className="container mx-auto py-10">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/cars">
@@ -188,5 +190,6 @@ export default async function CarDetailsPage({ params }: { params: { id: string 
         </div>
       </div>
     </div>
+ </Layout>
   )
 }

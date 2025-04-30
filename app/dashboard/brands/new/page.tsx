@@ -1,10 +1,14 @@
 import { BrandForm } from "@/components/brands/brand-form"
+import Layout from "@/components/Layout"
 
 export default function NewBrandPage() {
   return (
-    <div className="container mx-auto py-10">
+    <Layout>
+       <div className="container mx-auto py-10">
       <h1 className="text-[0.85rem]  font-bold mb-6">Add New Brand</h1>
       <BrandForm />
     </div>
+    </Layout>
+   
   )
 }

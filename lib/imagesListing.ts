@@ -22,6 +22,7 @@ export async function createSellListing(formData: FormData) {
     const engineType = formData.get("engineType") as string
     const condition = formData.get("condition") as "GOOD" | "AVERAGE" | "POOR" | "BAD"
     const sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string)
+    const yearOfManufacture = Number.parseInt(formData.get("yearOfManufacture") as string)
 
     // Get the main image URL
     const imageUrl = formData.get("imageUrl") as string
@@ -46,13 +47,14 @@ export async function createSellListing(formData: FormData) {
         mileage,
         brandName,
         carType,
-        enginePower,
         engineType,
         condition,
         sellingPrice,
+        yearOfManufacture,
         imageUrl, // Main image URL
         status: "PENDING",
         updatedAt: new Date(),
+   
       },
     })
 

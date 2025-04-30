@@ -448,7 +448,7 @@ export function SellListingDetail({ listing: initialListing, listingId }: SellLi
           </div>
         </CardHeader>
 
-        <div className="grid md:grid-cols-2 gap-6 p-6">
+        <div className="grid md:grid-cols-2 gap-6 sm:p-6 p-2 ">
           {/* Car Images Section - Left Column */}
           <div className="space-y-4">
             {allImages.length > 0 ? (

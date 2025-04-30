@@ -1,5 +1,6 @@
 import { SellListingDetail } from "@/components/sell-listings/sell-listing-detail"
 import { getSellListing } from "@/lib/ListingData"
+import Layout from "@/components/Layout"
 
 export default async function SellListingDetailPage({
   params,
@@ -16,17 +17,16 @@ export default async function SellListingDetailPage({
       ...img,
       createdAt: img.createdAt instanceof Date ? img.createdAt.toISOString() : img.createdAt,
       updatedAt: img.updatedAt instanceof Date ? img.updatedAt.toISOString() : img.updatedAt
-    }))
+    })),
+    lastServiceDate: rawListing.lastServiceDate instanceof Date ? rawListing.lastServiceDate.toISOString() : rawListing.lastServiceDate
   } : null;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-[0.85rem] font-bold tracking-tight">Listing Details</h1>
-      {listing ? (
-        <SellListingDetail listing={listing} />
-      ) : (
-        <p className="text-muted-foreground">Listing not found</p>
-      )}
-    </div>
+    <Layout>
+      <div className="px-2 sm:container sm:mx-auto  py-10">
+        <h1 className="text-[0.85rem]  font-bold mb-6">Sell Listing Details</h1>
+        {listing && <SellListingDetail listing={listing} />}
+      </div>
+    </Layout>
   )
 }

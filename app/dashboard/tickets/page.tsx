@@ -1,13 +1,16 @@
 import { TicketsList } from "@/components/tickets/tickets-list"
 import { getAllTickets } from "@/lib/ticket-actions"
+import Layout from "@/components/Layout"
 
 export default async function TicketsPage() {
   const tickets = await getAllTickets()
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-[0.85rem] font-bold tracking-tight">Support Tickets</h1>
-      <TicketsList tickets={tickets} />
-    </div>
+    <Layout>
+      <div className="container mx-auto py-10">
+        <h1 className="text-[0.85rem]  font-bold mb-6">Tickets Management</h1>
+        <TicketsList tickets={tickets} />
+      </div>
+    </Layout>
   )
 }

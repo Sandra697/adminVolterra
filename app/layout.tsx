@@ -1,9 +1,8 @@
-// app/layout.tsx
-import type { Metadata } from "next"
-import { Sidebar } from "@/components/sidebar"
-import "./globals.css"
-
+import type React from "react"
+import "@/app/globals.css"
 import { Quicksand } from "next/font/google"
+import { AuthProvider } from "@/providers/auth-provider"
+import { ToastProvider } from "@/providers/toast-provider"
 
 const quicksand = Quicksand({
   subsets: ["latin"],
@@ -11,9 +10,9 @@ const quicksand = Quicksand({
   display: "swap",
 })
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Your dashboard description",
+export const metadata = {
+  title: "Volterra Automotive",
+  description: "A platform for aggregating tenders from multiple sources",
 }
 
 export default function RootLayout({
@@ -22,12 +21,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={quicksand.className}>
-        <div className="flex min-h-screen text-gray-700 font-medium">
-          <Sidebar className="sticky top-0 h-screen" />
-          <main className="flex-1 p-6 overflow-auto">{children}</main>
-        </div>
+    <html lang="en" suppressHydrationWarning>
+      <body
+       className={`${quicksand.className} font-medium`}
+
+        
+      >
+          <AuthProvider>
+          <ToastProvider>
+       
+            {children}
+         
+            </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   )
