@@ -9,7 +9,7 @@ import Layout from "@/components/Layout"
 export default async function CarsPage() {
   return (
   <Layout>
-      <div className="container mx-auto py-10">
+      <div className="sm:container sm:mx-auto px-2 py-10">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-[0.85rem]  font-bold">Cars Management</h1>
         <div className="flex flex-col sm:flex-row gap-2">

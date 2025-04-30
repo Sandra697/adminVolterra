@@ -18,7 +18,7 @@ export default async function CarDetailsPage({ params }: { params: { id: string 
 
   return (
  <Layout>
-     <div className="container mx-auto py-10">
+     <div className="sm:container sm:mx-auto px-2 py-10">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/cars">

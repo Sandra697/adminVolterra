@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import Layout from "@/components/Layout"
 import { useState } from "react"
 import { useToast } from "@/providers/toast-provider"
 import { motion } from "framer-motion"
@@ -55,7 +55,8 @@ export default function InviteUserPage() {
   }
 
   return (
-    <RoleGate allowedRoles={[UserRole.SUPER_ADMIN]}>
+  <Layout>
+      <RoleGate allowedRoles={[UserRole.SUPER_ADMIN]}>
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-2xl font-bold text-amber-600 mb-6">Invite Users</h1>
 
@@ -119,5 +120,6 @@ export default function InviteUserPage() {
         </motion.div>
       </div>
     </RoleGate>
+  </Layout>
   )
 }

@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Main content area - offset from left on desktop */}
       <div className="md:pl-64 ">
-        <main className="p-6 md:mt-0 mt-8  min-h-screen">
+        <main className="sm:p-6 p-1 md:mt-0 pt-12  min-h-screen">
           {children}
         </main>
       </div>

@@ -7,7 +7,7 @@ export default async function TicketsPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-10">
+      <div className="sm:container sm:mx-auto px-2 py-10">
         <h1 className="text-[0.85rem]  font-bold mb-6">Tickets Management</h1>
         <TicketsList tickets={tickets} />
       </div>

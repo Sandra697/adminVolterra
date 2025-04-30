@@ -14,7 +14,7 @@ export default async function EditCarPage({ params }: { params: { id: string } }
 
   return (
     <Layout>
-          <div className="container mx-auto py-10">
+          <div className="sm:container sm:mx-auto px-2 py-10">
       <h1 className="text-[0.85rem]  font-bold mb-6">Edit Car: {car.name}</h1>
       <CarForm car={car} brands={brands} features={features} />
     </div>
